@@ -53,6 +53,11 @@ class CampaignFactory extends Factory
         return $this->state(fn () => ['status' => CampaignStatus::Draft->value]);
     }
 
+    public function pendingApproval(): self
+    {
+        return $this->state(fn () => ['status' => CampaignStatus::PendingApproval->value]);
+    }
+
     public function closed(): self
     {
         return $this->state(fn () => ['status' => CampaignStatus::Closed->value]);

@@ -113,3 +113,27 @@ it('policy moderate: employee denied; csr_admin and system_admin allowed', funct
     $this->actingAs($sys, 'api');
     expect(fn () => Gate::authorize('moderate', $campaign))->not()->toThrow(Exception::class);
 });
+
+it('allows owner to submit campaign for approval, and csr_admin can approve it', function () {
+    // Owner employee creates draft campaign
+    $owner = UserFactory::new()->create();
+    $owner->assignRole('employee');
+    $campaign = CampaignFactory::new()->draft()->createdBy($owner)->create();
+
+    // Owner can submit for approval (update_own)
+    $this->actingAs($owner, 'api');
+    $submitted = makeAuthCampaignService()->submitForApproval($campaign);
+    expect($submitted->status)->toBe(CampaignStatus::PendingApproval->value);
+
+    // Owner cannot approve (needs campaign.moderate)
+    expect(fn () => makeAuthCampaignService()->approve($submitted, $owner))
+        ->toThrow(AuthorizationException::class);
+
+    // CSR admin can approve and becomes approver
+    $csr = UserFactory::new()->create();
+    $csr->assignRole('csr_admin');
+    $this->actingAs($csr, 'api');
+    $approved = makeAuthCampaignService()->approve($submitted->refresh(), $csr);
+    expect($approved->status)->toBe(CampaignStatus::Active->value)
+        ->and($approved->approved_by_user_id)->toBe($csr->id);
+});

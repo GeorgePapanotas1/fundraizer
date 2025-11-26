@@ -42,9 +42,9 @@ class CreateCampaignForm extends Data
         #[RuleAttribute('ulid|exists:campaign_categories,id')]
         public ?string $campaign_category_id,
 
-        #[Required]
-        #[RuleAttribute(new EnumRule(CampaignStatus::class))]
-        public string $status,
+        #[Nullable]
+        #[RuleAttribute('in:'.CampaignStatus::Draft->value.','.CampaignStatus::PendingApproval->value)]
+        public ?string $status,
 
         #[Nullable]
         #[Date]
@@ -62,5 +62,10 @@ class CreateCampaignForm extends Data
         #[Nullable]
         #[RuleAttribute('ulid|exists:users,id')]
         public ?string $approved_by_user_id,
-    ) {}
+    ) {
+
+        if (! $status) {
+            $this->status = CampaignStatus::PendingApproval->value;
+        }
+    }
 }
