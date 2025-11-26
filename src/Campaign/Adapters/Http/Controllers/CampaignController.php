@@ -52,13 +52,13 @@ readonly class CampaignController
         $query->status = CampaignStatus::Active->value;
 
         Cache::add('campaigns:active:version', 1);
+
         /** @var int $version */
         $version = Cache::get('campaigns:active:version', 1);
         $perPage = $query->pagination->perPage;
         $page = $query->pagination->page;
 
         $key = "campaigns:active:v$version:per_$perPage:page_$page";
-
         $payload = Cache::remember($key, now()->addMinutes(10), function () use ($query) {
             return $this->service->paginate($query->pagination->perPage, $query->pagination->page, $query);
         });
@@ -78,14 +78,17 @@ readonly class CampaignController
         $user = Auth::user();
 
         if ($user && $user->can('campaign.moderate')) {
-            $values = [CampaignStatus::Active->value, CampaignStatus::PendingApproval->value, CampaignStatus::Cancelled->value];
-        } else {
-            $values = [CampaignStatus::Draft->value, CampaignStatus::PendingApproval->value];
+
+            return Response::success([
+                'campaign_id' => $campaign->id,
+                'statuses' => [CampaignStatus::Active->value, CampaignStatus::PendingApproval->value, CampaignStatus::Cancelled->value],
+            ]);
         }
 
         return Response::success([
             'campaign_id' => $campaign->id,
-            'statuses' => $values,
+            'statuses' => [CampaignStatus::Draft->value, CampaignStatus::PendingApproval->value],
         ]);
+
     }
 }
