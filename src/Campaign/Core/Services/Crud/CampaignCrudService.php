@@ -17,7 +17,10 @@ class CampaignCrudService
      */
     public function create(CreateCampaignForm $payload): Campaign
     {
-        return Campaign::create($payload->toArray());
+        /** @var array<string, mixed> $campaign */
+        $campaign = $payload->toArray();
+
+        return Campaign::create($campaign);
     }
 
     /**
@@ -27,9 +30,20 @@ class CampaignCrudService
      */
     public function update(Campaign $campaign, UpdateCampaignForm $payload): Campaign
     {
-        $campaign->fill($payload->toArray());
+        // Partial updates: only apply fields that are present (non-null)
+        /** @var array<string, mixed> $data */
+        $data = array_filter($payload->toArray(), fn ($v) => ! is_null($v));
+        $campaign->fill($data);
         $campaign->save();
 
         return $campaign->refresh();
+    }
+
+    /**
+     * Delete a Campaign (soft delete via model trait).
+     */
+    public function delete(Campaign $campaign): void
+    {
+        $campaign->delete();
     }
 }

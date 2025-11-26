@@ -11,6 +11,8 @@ class HttpResponseHelper
 {
     /**
      * Return a success response.
+     *
+     * @param  array<string, string>|null  $links
      */
     public static function success(mixed $data = null, ?array $links = null, int $status = 200, string $message = 'Success'): JsonResponse
     {
@@ -25,6 +27,8 @@ class HttpResponseHelper
 
     /**
      * Return an error response.
+     *
+     * @param  array<string, string>  $errors
      */
     public static function error(string $message, int $status = 400, array $errors = []): JsonResponse
     {

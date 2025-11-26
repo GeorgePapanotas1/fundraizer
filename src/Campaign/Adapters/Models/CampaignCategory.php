@@ -29,6 +29,7 @@ class CampaignCategory extends Model
         'is_active' => 'boolean',
     ];
 
+    /** @return HasMany<Campaign, $this> */
     public function campaigns(): HasMany
     {
         return $this->hasMany(Campaign::class, 'campaign_category_id');

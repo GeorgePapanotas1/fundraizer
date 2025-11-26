@@ -15,8 +15,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Seed base roles & permissions for the Campaign context
+        // Comment out if you prefer manual seeding.
+        $this->call([
+            IdentityCampaignPermissionSeeder::class,
+        ]);
 
+        // Example demo user
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',

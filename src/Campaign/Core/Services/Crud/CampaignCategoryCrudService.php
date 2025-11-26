@@ -13,7 +13,10 @@ class CampaignCategoryCrudService
 {
     public function create(CreateCampaignCategoryForm $payload): CampaignCategory
     {
-        return CampaignCategory::create($payload->toArray());
+        /** @var array<string, mixed> $category */
+        $category = $payload->toArray();
+
+        return CampaignCategory::create($category);
     }
 
     /**
@@ -21,9 +24,21 @@ class CampaignCategoryCrudService
      */
     public function update(CampaignCategory $category, UpdateCampaignCategoryForm $payload): CampaignCategory
     {
-        $category->fill($payload->toArray());
+        // Partial updates: only apply fields that are present (non-null)
+        /** @var array<string, mixed> $data */
+        $data = array_filter($payload->toArray(), fn ($v) => ! is_null($v));
+
+        $category->fill($data);
         $category->save();
 
         return $category->refresh();
+    }
+
+    /**
+     * Delete a CampaignCategory.
+     */
+    public function delete(CampaignCategory $category): void
+    {
+        $category->delete();
     }
 }

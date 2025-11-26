@@ -10,6 +10,7 @@ use Fundraiser\Campaign\Core\Services\Crud\CampaignCrudService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Read + orchestration service for Campaigns.
@@ -21,7 +22,7 @@ readonly class CampaignService
     public function __construct(private CampaignCrudService $campaignCrudService) {}
 
     /**
-     * Get a query builder with optional filters applied.
+     * @return Builder<Campaign>
      */
     protected function baseQuery(CampaignQuery $filters): Builder
     {
@@ -39,30 +40,54 @@ readonly class CampaignService
 
     public function findById(string $id): ?Campaign
     {
-        return Campaign::query()->find($id);
+        $model = Campaign::query()->find($id);
+
+        // Authorize viewing only when a model exists
+        if ($model) {
+            Gate::authorize('view', $model);
+        }
+
+        return $model;
     }
 
-    public function list(array|CampaignQuery $filters = []): Collection
+    /**
+     * @return Collection<int, Campaign>
+     */
+    public function list(CampaignQuery $filters): Collection
     {
-        $filtersDto = $filters instanceof CampaignQuery ? $filters : CampaignQuery::from($filters);
+        Gate::authorize('viewAny', Campaign::class);
 
-        return $this->baseQuery($filtersDto)->get();
+        return $this->baseQuery($filters)->get();
     }
 
-    public function paginate(int $perPage = 15, int $page = 1, array|CampaignQuery $filters = []): LengthAwarePaginator
+    /**
+     * @return LengthAwarePaginator<int, Campaign>
+     */
+    public function paginate(int $perPage, int $page, CampaignQuery $filters): LengthAwarePaginator
     {
-        $filtersDto = $filters instanceof CampaignQuery ? $filters : CampaignQuery::from($filters);
+        Gate::authorize('viewAny', Campaign::class);
 
-        return $this->baseQuery($filtersDto)->paginate(perPage: $perPage, page: $page);
+        return $this->baseQuery($filters)->paginate(perPage: $perPage, page: $page);
     }
 
     public function create(CreateCampaignForm $payload): Campaign
     {
+        Gate::authorize('create', Campaign::class);
+
         return $this->campaignCrudService->create($payload);
     }
 
     public function update(Campaign $campaign, UpdateCampaignForm $payload): Campaign
     {
+        Gate::authorize('update', $campaign);
+
         return $this->campaignCrudService->update($campaign, $payload);
+    }
+
+    public function delete(Campaign $campaign): void
+    {
+        Gate::authorize('delete', $campaign);
+
+        $this->campaignCrudService->delete($campaign);
     }
 }

@@ -10,12 +10,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory;
 
+    use HasRoles;
     use HasUlids;
     use Notifiable;
 
@@ -53,11 +55,13 @@ class User extends Authenticatable
         ];
     }
 
+    /** @return HasMany<Campaign, $this> */
     public function campaignsOwned(): HasMany
     {
         return $this->hasMany(Campaign::class, 'created_by_user_id');
     }
 
+    /** @return HasMany<Campaign, $this> */
     public function campaignsApproved(): HasMany
     {
         return $this->hasMany(Campaign::class, 'approved_by_user_id');

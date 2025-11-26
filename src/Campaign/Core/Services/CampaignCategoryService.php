@@ -10,6 +10,7 @@ use Fundraiser\Campaign\Core\Services\Crud\CampaignCategoryCrudService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Read + orchestration service for Campaign Categories.
@@ -20,6 +21,9 @@ readonly class CampaignCategoryService
 {
     public function __construct(private CampaignCategoryCrudService $categoryCrudService) {}
 
+    /**
+     * @return Builder<CampaignCategory>
+     */
     protected function baseQuery(CampaignCategoryQuery $filters): Builder
     {
         return CampaignCategory::query()
@@ -33,29 +37,59 @@ readonly class CampaignCategoryService
 
     public function findById(string $id): ?CampaignCategory
     {
-        return CampaignCategory::query()->find($id);
+        $model = CampaignCategory::query()->find($id);
+
+        if ($model) {
+            Gate::authorize('view', $model);
+        }
+
+        return $model;
     }
 
-    public function list(array|CampaignCategoryQuery $filters = []): Collection
+    /**
+     * @return Collection<int, CampaignCategory>
+     */
+    public function list(CampaignCategoryQuery $filters): Collection
     {
+        Gate::authorize('viewAny', CampaignCategory::class);
+
         return $this->baseQuery($filters)->get();
     }
 
+    /**
+     * @return LengthAwarePaginator<int, CampaignCategory>
+     */
     public function paginate(
         int $perPage,
         int $page,
         CampaignCategoryQuery $filters
     ): LengthAwarePaginator {
+        Gate::authorize('viewAny', CampaignCategory::class);
+
         return $this->baseQuery($filters)->paginate(perPage: $perPage, page: $page);
     }
 
     public function create(CreateCampaignCategoryForm $payload): CampaignCategory
     {
+        Gate::authorize('create', CampaignCategory::class);
+
         return $this->categoryCrudService->create($payload);
     }
 
     public function update(CampaignCategory $category, UpdateCampaignCategoryForm $payload): CampaignCategory
     {
+        Gate::authorize('update', $category);
+
         return $this->categoryCrudService->update($category, $payload);
+    }
+
+    /**
+     * Delete a campaign category. Guarded by policy.
+     */
+    public function delete(CampaignCategory $category): void
+    {
+        Gate::authorize('delete', $category);
+
+        $this->categoryCrudService->delete($category);
     }
 }

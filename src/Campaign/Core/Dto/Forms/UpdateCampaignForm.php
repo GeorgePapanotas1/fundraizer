@@ -36,7 +36,7 @@ class UpdateCampaignForm extends Data
 
         #[Sometimes]
         #[NumericAttribute]
-        #[Min(0.01)]
+        #[Min(1)]
         public ?float $goal_amount = null,
 
         #[Sometimes]
