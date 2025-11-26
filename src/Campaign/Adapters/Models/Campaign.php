@@ -42,16 +42,19 @@ class Campaign extends Model
         'ends_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<CampaignCategory, $this> */
     public function category(): BelongsTo
     {
         return $this->belongsTo(CampaignCategory::class, 'campaign_category_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by_user_id');

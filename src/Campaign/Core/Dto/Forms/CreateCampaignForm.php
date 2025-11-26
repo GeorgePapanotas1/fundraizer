@@ -31,7 +31,7 @@ class CreateCampaignForm extends Data
 
         #[Required]
         #[NumericAttribute]
-        #[Min(0.01)]
+        #[Min(1)]
         public float $goal_amount,
 
         #[Required]

@@ -27,7 +27,7 @@ it('lists campaign categories with search filter via API', function () {
     $response->assertOk();
     $items = data_get($response->json(), 'data.data');
     expect($items)->toBeArray()
-        ->and(collect($items)->every(fn($c) => str_contains($c['name'], 'Edu') || str_contains((string)($c['description'] ?? ''), 'Edu')))->toBeTrue();
+        ->and(collect($items)->every(fn ($c) => str_contains($c['name'], 'Edu') || str_contains((string) ($c['description'] ?? ''), 'Edu')))->toBeTrue();
 });
 
 it('shows a single campaign category via API', function () {

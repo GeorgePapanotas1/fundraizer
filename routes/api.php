@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 // we add versioning prefix 'v1' to achieve final path '/api/v1/...'
 Route::prefix('v1')
     ->as('api.v1.')
+    ->middleware('auth:api')
     ->group(function () {
         // Campaigns
         Route::get('campaigns', [CampaignController::class, 'index'])->name('campaigns.index');

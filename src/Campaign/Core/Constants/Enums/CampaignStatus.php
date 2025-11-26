@@ -9,7 +9,9 @@ enum CampaignStatus: string
     case Closed = 'closed';
     case Cancelled = 'cancelled';
 
-    // write a custom function that returns an array of all the values
+    /**
+     * @return array<string>
+     */
     public static function all(): array
     {
         return array_column(self::cases(), 'value');
