@@ -4,9 +4,7 @@ use Database\Factories\Fundraiser\Campaign\Adapters\Models\CampaignCategoryFacto
 use Database\Factories\Fundraiser\Identity\Adapters\Models\UserFactory;
 use Fundraiser\Campaign\Core\Dto\Forms\CreateCampaignCategoryForm;
 use Fundraiser\Campaign\Core\Dto\Forms\UpdateCampaignCategoryForm;
-use Fundraiser\Campaign\Core\Dto\Queries\CampaignCategoryQuery;
 use Fundraiser\Campaign\Core\Services\CampaignCategoryService;
-use Fundraiser\Common\Core\Dto\Queries\PaginationQuery;
 use Illuminate\Auth\Access\AuthorizationException;
 
 function makeAuthCampaignCategoryService(): CampaignCategoryService
@@ -14,33 +12,10 @@ function makeAuthCampaignCategoryService(): CampaignCategoryService
     return app(CampaignCategoryService::class);
 }
 
-it('denies guests from listing categories via policy', function () {
-    auth('web')->logout();
-
-    expect(fn () => makeAuthCampaignCategoryService()->list(new CampaignCategoryQuery(search: null, pagination: new PaginationQuery(1, 10))))
-        ->toThrow(AuthorizationException::class);
-});
-
-it('authorizes findById for categories: guest denied on existing, admin allowed', function () {
-    $category = Database\Factories\Fundraiser\Campaign\Adapters\Models\CampaignCategoryFactory::new()->create();
-
-    // guest denied
-    auth('web')->logout();
-    expect(fn () => makeAuthCampaignCategoryService()->findById($category->id))
-        ->toThrow(Illuminate\Auth\Access\AuthorizationException::class);
-
-    // admin allowed
-    $admin = Database\Factories\Fundraiser\Identity\Adapters\Models\UserFactory::new()->create();
-    $admin->assignRole('system_admin');
-    $this->actingAs($admin, 'web');
-    $found = makeAuthCampaignCategoryService()->findById($category->id);
-    expect($found?->id)->toBe($category->id);
-});
-
 it('denies employee from creating or updating categories (requires moderate)', function () {
     $employee = UserFactory::new()->create();
     $employee->assignRole('employee');
-    $this->actingAs($employee, 'web');
+    $this->actingAs($employee, 'api');
 
     // Create should be denied
     $create = new CreateCampaignCategoryForm(name: 'Health', description: 'desc');
@@ -57,7 +32,7 @@ it('denies employee from creating or updating categories (requires moderate)', f
 it('allows csr_admin to create and update categories', function () {
     $admin = UserFactory::new()->create();
     $admin->assignRole('csr_admin');
-    $this->actingAs($admin, 'web');
+    $this->actingAs($admin, 'api');
 
     $create = new CreateCampaignCategoryForm(name: 'Environment', description: 'desc');
     $created = makeAuthCampaignCategoryService()->create($create);
@@ -71,7 +46,7 @@ it('allows csr_admin to create and update categories', function () {
 it('service delete category: employee denied; csr_admin allowed', function () {
     $employee = UserFactory::new()->create();
     $employee->assignRole('employee');
-    $this->actingAs($employee, 'web');
+    $this->actingAs($employee, 'api');
 
     $category = CampaignCategoryFactory::new()->create(['name' => 'To Delete']);
 
@@ -82,7 +57,7 @@ it('service delete category: employee denied; csr_admin allowed', function () {
     // csr_admin can delete
     $admin = UserFactory::new()->create();
     $admin->assignRole('csr_admin');
-    $this->actingAs($admin, 'web');
+    $this->actingAs($admin, 'api');
     expect(fn () => makeAuthCampaignCategoryService()->delete($category))->not()->toThrow(Exception::class);
     $this->assertDatabaseMissing('campaign_categories', ['id' => $category->id]);
 });

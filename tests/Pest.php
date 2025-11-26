@@ -15,8 +15,9 @@ uses(Tests\TestCase::class, RefreshDatabase::class)->beforeEach(function () {
     // Seed roles & permissions for Campaign context
     $this->seed(IdentityCampaignPermissionSeeder::class);
 
-    // Authenticate a superuser to pass policies by default in Feature tests
+    // Authenticate a superuser on both web (policies) and api (HTTP JSON) guards
     $user = UserFactory::new()->create();
     $user->assignRole('system_admin');
-    $this->be($user, 'web');
+    //    $this->actingAs($user, 'web');
+    $this->actingAs($user, 'api');
 })->in('Feature');

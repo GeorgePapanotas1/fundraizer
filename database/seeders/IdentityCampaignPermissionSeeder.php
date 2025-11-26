@@ -11,9 +11,9 @@ class IdentityCampaignPermissionSeeder extends Seeder
     public function run(): void
     {
         // Ensure roles exist
-        $employee = Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'web']);
-        $csrAdmin = Role::firstOrCreate(['name' => 'csr_admin', 'guard_name' => 'web']);
-        $systemAdmin = Role::firstOrCreate(['name' => 'system_admin', 'guard_name' => 'web']);
+        $employee = Role::firstOrCreate(['name' => 'employee', 'guard_name' => 'api']);
+        $csrAdmin = Role::firstOrCreate(['name' => 'csr_admin', 'guard_name' => 'api']);
+        $systemAdmin = Role::firstOrCreate(['name' => 'system_admin', 'guard_name' => 'api']);
 
         // Define campaign permissions (names only)
         $campaignPermissions = [
@@ -30,7 +30,7 @@ class IdentityCampaignPermissionSeeder extends Seeder
 
         // Create all permissions (idempotent)
         foreach ($campaignPermissions as $perm) {
-            Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
+            Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'api']);
         }
 
         // Assign permissions to roles
