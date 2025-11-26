@@ -3,10 +3,12 @@
 namespace Fundraiser\Campaign\Core\Services;
 
 use Fundraiser\Campaign\Adapters\Models\Campaign;
+use Fundraiser\Campaign\Core\Constants\Enums\CampaignStatus;
 use Fundraiser\Campaign\Core\Dto\Forms\CreateCampaignForm;
 use Fundraiser\Campaign\Core\Dto\Forms\UpdateCampaignForm;
 use Fundraiser\Campaign\Core\Dto\Queries\CampaignQuery;
 use Fundraiser\Campaign\Core\Services\Crud\CampaignCrudService;
+use Fundraiser\Identity\Adapters\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -19,7 +21,9 @@ use Illuminate\Support\Facades\Gate;
  */
 readonly class CampaignService
 {
-    public function __construct(private CampaignCrudService $campaignCrudService) {}
+    public function __construct(
+        private CampaignCrudService $campaignCrudService,
+    ) {}
 
     /**
      * @return Builder<Campaign>
@@ -89,5 +93,34 @@ readonly class CampaignService
         Gate::authorize('delete', $campaign);
 
         $this->campaignCrudService->delete($campaign);
+    }
+
+    /**
+     * Move a campaign into moderation queue. Owner (update_own) or admins (update_any) can do this.
+     */
+    public function submitForApproval(Campaign $campaign): Campaign
+    {
+        Gate::authorize('update', $campaign);
+
+        return $this->campaignCrudService->update(
+            $campaign,
+            new UpdateCampaignForm(status: CampaignStatus::PendingApproval->value)
+        );
+    }
+
+    /**
+     * Approve a campaign. Requires 'campaign.moderate'. Sets status to active and records approver.
+     */
+    public function approve(Campaign $campaign, User $approver): Campaign
+    {
+        Gate::authorize('moderate', $campaign);
+
+        return $this->campaignCrudService->update(
+            $campaign,
+            new UpdateCampaignForm(
+                status: CampaignStatus::Active->value,
+                approved_by_user_id: (string) $approver->id
+            )
+        );
     }
 }
