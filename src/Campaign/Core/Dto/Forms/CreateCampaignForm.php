@@ -13,6 +13,7 @@ use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Numeric as NumericAttribute;
 use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Attributes\Validation\Rule as RuleAttribute;
+use Spatie\LaravelData\Attributes\Validation\Sometimes;
 use Spatie\LaravelData\Data;
 
 class CreateCampaignForm extends Data
@@ -55,13 +56,17 @@ class CreateCampaignForm extends Data
         #[After('starts_at')]
         public ?string $ends_at,
 
-        #[Required]
+        #[Nullable]
+        public ?string $image = null,
+
+        #[Sometimes]
+        #[Nullable]
         #[RuleAttribute('ulid|exists:users,id')]
-        public string $created_by_user_id,
+        public ?string $created_by_user_id = null,
 
         #[Nullable]
         #[RuleAttribute('ulid|exists:users,id')]
-        public ?string $approved_by_user_id,
+        public ?string $approved_by_user_id = null,
     ) {
 
         if (! $status) {

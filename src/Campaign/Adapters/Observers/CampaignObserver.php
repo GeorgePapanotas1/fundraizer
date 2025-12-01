@@ -40,7 +40,7 @@ class CampaignObserver
 
     private function bumpActiveCacheVersion(): void
     {
-        // Ensure a baseline version exists (1) and then bump
+        // Ensure a baselixne version exists (1) and then bump
         /** @var int $current */
         $current = Cache::get('campaigns:active:version', 1);
         Cache::forever('campaigns:active:version', $current + 1);

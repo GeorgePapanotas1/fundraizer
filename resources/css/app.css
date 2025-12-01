@@ -1,11 +1,254 @@
 @import 'tailwindcss';
 
+/* Content sources for Tailwind v4 JIT */
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
+@source '../**/*.vue';
 
+/*
+  Fundraiser UI Theme — Tailwind v4 tokens
+  Design goals: modern enterprise, warm CSR tone, accessible contrast.
+
+  Note: These are design tokens (CSS custom properties) consumed by Tailwind.
+  Use the provided utilities (e.g. btn, card, input) and semantic tokens to keep
+  a consistent look across Blade templates and Vue components.
+*/
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+  /* Typography */
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  /* Type scale (optical sizes) */
+  --text-xs: 0.75rem;   /* 12px */
+  --text-sm: 0.875rem;  /* 14px */
+  --text-base: 1rem;    /* 16px */
+  --text-lg: 1.125rem;  /* 18px */
+  --text-xl: 1.25rem;   /* 20px */
+  --text-2xl: 1.5rem;   /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem;  /* 36px */
+  --text-5xl: 3rem;     /* 48px */
+  --text-6xl: 3.75rem;  /* 60px */
+
+  /* Line-heights */
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+
+  /* Color palette — warm, trustworthy */
+  /* Brand primary (teal) */
+  --color-primary-50:  #eefdf9;
+  --color-primary-100: #d4fbf1;
+  --color-primary-200: #aaf6e3;
+  --color-primary-300: #78ecd3;
+  --color-primary-400: #43dcc1;
+  --color-primary-500: #16c7ac; /* base */
+  --color-primary-600: #0ea691;
+  --color-primary-700: #0e8577;
+  --color-primary-800: #106b62;
+  --color-primary-900: #0f5751;
+
+  /* Secondary (indigo) */
+  --color-secondary-50:  #eef2ff;
+  --color-secondary-100: #e0e7ff;
+  --color-secondary-200: #c7d2fe;
+  --color-secondary-300: #a5b4fc;
+  --color-secondary-400: #818cf8;
+  --color-secondary-500: #6366f1; /* base */
+  --color-secondary-600: #5458d6;
+  --color-secondary-700: #4446b9;
+  --color-secondary-800: #373a99;
+  --color-secondary-900: #2e317e;
+
+  /* Accent (coral) for calls to donate */
+  --color-accent-50:  #fff2ee;
+  --color-accent-100: #ffd9cf;
+  --color-accent-200: #ffb8a3;
+  --color-accent-300: #ff9577;
+  --color-accent-400: #ff6f4a;
+  --color-accent-500: #ff5a36; /* base */
+  --color-accent-600: #e14b2b;
+  --color-accent-700: #bd3e24;
+  --color-accent-800: #9b341f;
+  --color-accent-900: #7f2c1a;
+
+  /* Neutral surface system */
+  --color-neutral-50:  #fafaf9;
+  --color-neutral-100: #f5f5f4;
+  --color-neutral-200: #e7e5e4;
+  --color-neutral-300: #d6d3d1;
+  --color-neutral-400: #a8a29e;
+  --color-neutral-500: #78716c;
+  --color-neutral-600: #57534e;
+  --color-neutral-700: #44403c;
+  --color-neutral-800: #292524;
+  --color-neutral-900: #1c1917;
+
+  /* Semantic */
+  --color-success-50: #ecfdf5;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-info-50:    #eff6ff;
+  --color-info-500:   #3b82f6;
+  --color-info-600:   #2563eb;
+  --color-warning-50: #fffbeb;
+  --color-warning-500:#f59e0b;
+  --color-warning-600:#d97706;
+  --color-danger-50:  #fef2f2;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+
+  /* Foreground pairs (light) */
+  --bg-app:    var(--color-neutral-50);
+  --fg-app:    #1b1b18;
+  --bg-surface: #ffffff;
+  --fg-muted:  #5e5b57;
+  --border:    rgba(16, 24, 40, 0.12);
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+
+  /* Shadows / elevation */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.08), 0 6px 20px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.10);
+  --shadow-inset: inset 0 0 0 1px var(--border);
+
+  /* Gradients */
+  --gradient-hero: radial-gradient(80% 60% at 50% 0%, rgba(22,199,172,0.22), transparent 60%),
+                   linear-gradient(180deg, rgba(99,102,241,0.12), rgba(22,199,172,0.08));
+  --gradient-accent: linear-gradient(135deg, var(--color-accent-500), var(--color-primary-500));
+  --gradient-soft: linear-gradient(180deg, rgba(16, 200, 170, 0.08), rgba(99,102,241,0.06));
+
+  /* Spacing recommendations (Tailwind already ships a scale; here for docs) */
+  --space-unit: 0.25rem; /* 4px base */
 }
+
+/* Base app background/foreground helpers */
+:root {
+  color-scheme: light dark;
+}
+
+/* Dark mode token overrides applied when .dark class is set on <html> */
+:root.dark {
+  --bg-app:    #0b0c0c;
+  --fg-app:    #ededec;
+  --bg-surface: #111211;
+  --fg-muted:  #a1a09a;
+  --border:    rgba(255, 255, 255, 0.14);
+}
+
+/* Utilities — enterprise-grade, reusable across Blade */
+@utility container-page {
+  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+/* Focus ring — accessible */
+@utility focus-ring {
+  @apply outline-none ring-2 ring-offset-2 ring-[color:var(--color-primary-500)] ring-offset-[color:var(--bg-surface)];
+}
+
+/* Cards */
+@utility card {
+  @apply bg-[color:var(--bg-surface)] text-[color:var(--fg-app)] shadow-[var(--shadow-inset),var(--shadow-sm)] rounded-[var(--radius-lg)] border border-[color:var(--border)];
+}
+@utility card-hover {
+  @apply transition-shadow hover:shadow-[var(--shadow-md)];
+}
+@utility card-section {
+  @apply p-5 sm:p-6 lg:p-8;
+}
+
+/* Buttons */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 font-medium rounded-[var(--radius-md)] px-4 py-2 text-[var(--fg-app)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors;
+}
+@utility btn-primary {
+  @apply btn bg-[color:var(--color-primary-600)] text-white hover:bg-[color:var(--color-primary-700)] focus-visible:focus-ring;
+}
+@utility btn-secondary {
+  @apply btn bg-[color:var(--color-secondary-600)] text-white hover:bg-[color:var(--color-secondary-700)] focus-visible:focus-ring;
+}
+@utility btn-accent {
+  @apply btn bg-[color:var(--color-accent-600)] text-white hover:bg-[color:var(--color-accent-700)] focus-visible:focus-ring;
+}
+@utility btn-soft {
+  @apply btn bg-[color:var(--color-primary-50)] text-[color:var(--color-primary-700)] hover:bg-[color:var(--color-primary-100)] border border-[color:var(--color-primary-200)] focus-visible:focus-ring;
+}
+@utility btn-subtle {
+  @apply btn bg-transparent border border-[color:var(--border)] text-[color:var(--fg-app)] hover:bg-[color:var(--color-neutral-100)] focus-visible:focus-ring;
+}
+@utility btn-danger {
+  @apply btn bg-[color:var(--color-danger-600)] text-white hover:bg-[color:var(--color-danger-700)] focus-visible:focus-ring;
+}
+
+/* Badges */
+@utility badge {
+  @apply inline-flex items-center gap-1 rounded-[var(--radius-full)] px-2 py-0.5 text-xs font-medium border;
+}
+@utility badge-success { @apply badge bg-[color:var(--color-success-50)] text-[color:var(--color-success-600)] border-[color:var(--color-success-600)]/20; }
+@utility badge-info    { @apply badge bg-[color:var(--color-info-50)] text-[color:var(--color-info-600)] border-[color:var(--color-info-600)]/20; }
+@utility badge-warn    { @apply badge bg-[color:var(--color-warning-50)] text-[color:var(--color-warning-600)] border-[color:var(--color-warning-600)]/20; }
+@utility badge-danger  { @apply badge bg-[color:var(--color-danger-50)] text-[color:var(--color-danger-600)] border-[color:var(--color-danger-600)]/20; }
+
+/* Forms */
+@utility input-base {
+  @apply block w-full rounded-[var(--radius-md)] border border-[color:var(--border)] bg-[color:var(--bg-surface)] text-[color:var(--fg-app)] placeholder:[color:var(--fg-muted)]/70 shadow-[var(--shadow-inset)] px-3 py-2 focus-visible:focus-ring;
+}
+@utility input { @apply input-base; }
+@utility select { @apply input-base pr-8; }
+@utility textarea { @apply input-base min-h-28; }
+@utility label {
+  @apply block text-sm font-medium text-[color:var(--fg-muted)] mb-1.5;
+}
+@utility help-text {
+  @apply mt-1 text-xs text-[color:var(--fg-muted)];
+}
+@utility invalid {
+  @apply !border-[color:var(--color-danger-600)] !ring-[color:var(--color-danger-600)]/20;
+}
+
+/* Switch (checkbox as toggle) */
+@utility switch {
+  @apply relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-[var(--radius-full)] border border-[color:var(--border)] bg-[color:var(--color-neutral-200)] transition-colors;
+}
+@utility switch-thumb {
+  @apply pointer-events-none inline-block h-5 w-5 translate-x-0 rounded-[var(--radius-full)] bg-white shadow ring-0 transition;
+}
+@utility switch-on  { @apply bg-[color:var(--color-primary-600)]; }
+@utility switch-on-thumb { @apply translate-x-5; }
+
+/* Headings helpers (optional sugar over Tailwind sizes) */
+@utility h1 { @apply text-4xl sm:text-5xl font-semibold tracking-tight leading-tight; }
+@utility h2 { @apply text-3xl sm:text-4xl font-semibold tracking-tight leading-tight; }
+@utility h3 { @apply text-2xl font-semibold leading-snug; }
+@utility h4 { @apply text-xl font-semibold leading-snug; }
+
+/* Brand patterns (subtle backgrounds) */
+@utility pattern-grid {
+  background-image: linear-gradient(0deg, rgba(16,24,40,0.06) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(16,24,40,0.06) 1px, transparent 1px);
+  background-size: 24px 24px, 24px 24px;
+}
+@utility pattern-dots {
+  background-image: radial-gradient(rgba(16,24,40,0.10) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+@utility hero-surface {
+  @apply bg-[image:var(--gradient-hero)] bg-no-repeat bg-top;
+}
+
+/* Layout helpers */
+@utility section-padding { @apply py-12 sm:py-16 lg:py-24; }
+@utility stack-md { @apply flex flex-col gap-3; }
+@utility stack-lg { @apply flex flex-col gap-6; }

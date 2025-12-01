@@ -27,7 +27,12 @@ class CampaignQuery extends Data
 
         #[Max(255)]
         public ?string $search,
+
+        #[RuleAttribute('boolean')]
+        public ?bool $mine,
+
         public PaginationQuery $pagination,
+
     ) {}
 
 }

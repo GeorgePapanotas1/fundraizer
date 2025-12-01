@@ -19,22 +19,37 @@ readonly class CampaignController
 
     public function index(CampaignQuery $query): JsonResponse
     {
+        // Adapter-side convenience: allow filtering "my campaigns" via ?mine=1
+        // without leaking adapter concerns into Core DTOs. We simply map it to
+        // created_by_user_id when requested and the user is authenticated.
+        if (request()->boolean('mine')) {
+            $userId = Auth::id();
+            if ($userId) {
+                $query->created_by_user_id = $userId;
+            }
+        }
+
         $paginator = $this->service->paginate(
             $query->pagination->perPage,
             $query->pagination->page,
             $query
         );
 
+        $paginator->getCollection()->load('category');
+
         return Response::success($paginator);
     }
 
     public function show(Campaign $campaign): JsonResponse
     {
+        $campaign->load('category');
+
         return Response::success($campaign);
     }
 
     public function store(CreateCampaignForm $campaignForm): JsonResponse
     {
+        $campaignForm->created_by_user_id = Auth::id();
         $campaign = $this->service->create($campaignForm);
 
         return Response::success($campaign, status: 201, message: 'Created');
@@ -60,7 +75,11 @@ readonly class CampaignController
 
         $key = "campaigns:active:v$version:per_$perPage:page_$page";
         $payload = Cache::remember($key, now()->addMinutes(10), function () use ($query) {
-            return $this->service->paginate($query->pagination->perPage, $query->pagination->page, $query);
+            $p = $this->service->paginate($query->pagination->perPage, $query->pagination->page, $query);
+            // Eager-load category on the page items to avoid N+1 when serializing
+            $p->getCollection()->load('category');
+
+            return $p;
         });
 
         return Response::success($payload);

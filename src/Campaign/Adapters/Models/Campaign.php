@@ -3,6 +3,7 @@
 namespace Fundraiser\Campaign\Adapters\Models;
 
 use Database\Factories\Fundraiser\Campaign\Adapters\Models\CampaignFactory;
+use Fundraiser\Campaign\Core\Constants\Enums\CampaignStatus;
 use Fundraiser\Identity\Adapters\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,6 +27,7 @@ class Campaign extends Model
         'slug',
         'short_description',
         'description',
+        'image',
         'goal_amount',
         'currency',
         'status',
@@ -40,6 +42,15 @@ class Campaign extends Model
         'goal_amount' => 'decimal:2',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
+    ];
+
+    /**
+     * Append human-readable status text to JSON output while keeping the enum value in `status`.
+     */
+    protected $appends = [
+        'status_text',
+        'category_name',
+        'is_mine',
     ];
 
     /** @return BelongsTo<CampaignCategory, $this> */
@@ -63,7 +74,47 @@ class Campaign extends Model
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()
-            ->generateSlugsFrom('name')
+            ->generateSlugsFrom('title')
             ->saveSlugsTo('slug');
+    }
+
+    /**
+     * Use slug for implicit route-model binding.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /**
+     * Human-readable status label for UI display.
+     */
+    public function getStatusTextAttribute(): string
+    {
+        /** @var ?string $currentStatus */
+        $currentStatus = $this->attributes['status'] ?? null;
+
+        return CampaignStatus::labelFor($currentStatus);
+    }
+
+    /**
+     * Expose related category name directly on the model JSON: `category_name`.
+     */
+    public function getCategoryNameAttribute(): ?string
+    {
+        return $this->relationLoaded('category') ? ($this->category?->name) : null;
+    }
+
+    /**
+     * Indicates whether the authenticated user is the creator of the campaign.
+     * Adapter concern only; safe for UI to decide if "Edit" link should show.
+     */
+    public function getIsMineAttribute(): bool
+    {
+        /** @var string|null $authId */
+        $authId = \Illuminate\Support\Facades\Auth::id();
+        /** @var string|null $creatorId */
+        $creatorId = $this->attributes['created_by_user_id'] ?? null;
+        return $authId !== null && $creatorId !== null && $authId === $creatorId;
     }
 }

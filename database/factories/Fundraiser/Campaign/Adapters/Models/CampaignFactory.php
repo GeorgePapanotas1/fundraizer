@@ -28,6 +28,7 @@ class CampaignFactory extends Factory
             'title' => $title,
             'short_description' => $this->faker->sentence(),
             'description' => $this->faker->paragraphs(2, true),
+            'image' => sprintf('https://picsum.photos/seed/%s/800/450', $this->faker->uuid()),
 
             'goal_amount' => $this->faker->randomFloat(2, 100, 50000),
             'currency' => 'EUR',

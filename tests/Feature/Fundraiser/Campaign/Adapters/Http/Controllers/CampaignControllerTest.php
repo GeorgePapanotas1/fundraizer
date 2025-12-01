@@ -34,7 +34,7 @@ it('lists campaigns with pagination and filters via API', function () {
 it('shows a single campaign via API', function () {
     $campaign = CampaignFactory::new()->create();
 
-    $response = $this->getJson('/api/v1/campaigns/'.$campaign->id);
+    $response = $this->getJson('/api/v1/campaigns/'.$campaign->slug);
 
     $response->assertOk()
         ->assertJsonPath('data.id', $campaign->id)
@@ -141,7 +141,7 @@ it('returns edit statuses for employee vs moderator', function () {
     $employee = UserFactory::new()->create();
     $employee->assignRole('employee');
     $this->actingAs($employee, 'api');
-    $respEmp = $this->getJson('/api/v1/campaigns/'.$campaign->id.'/statuses');
+    $respEmp = $this->getJson('/api/v1/campaigns/'.$campaign->slug.'/statuses');
     $respEmp->assertOk()
         ->assertJson(fn (AssertableJson $json) => $json
             ->where('data.campaign_id', $campaign->id)
@@ -153,7 +153,7 @@ it('returns edit statuses for employee vs moderator', function () {
     $csr = UserFactory::new()->create();
     $csr->assignRole('csr_admin');
     $this->actingAs($csr, 'api');
-    $respCsr = $this->getJson('/api/v1/campaigns/'.$campaign->id.'/statuses');
+    $respCsr = $this->getJson('/api/v1/campaigns/'.$campaign->slug.'/statuses');
     $respCsr->assertOk()
         ->assertJson(fn (AssertableJson $json) => $json
             ->where('data.campaign_id', $campaign->id)
@@ -172,7 +172,7 @@ it('updates a campaign via API with UpdateCampaignForm DTO', function () {
         'currency' => SupportedCurrencies::USDollar->value,
     ];
 
-    $response = $this->patchJson('/api/v1/campaigns/'.$campaign->id, $payload);
+    $response = $this->patchJson('/api/v1/campaigns/'.$campaign->slug, $payload);
 
     $response->assertOk()
         ->assertJsonPath('message', 'Updated')
