@@ -153,7 +153,7 @@ vendor/bin/sail up -d
 ```
 
 ```bash
-composer setup
+vendor/bin/sail composer setup
 ```
 
 During the composer setup, you will be promted to create a passport client. Make sure to copy the client and add it to
@@ -163,6 +163,16 @@ finally
 
 ```bash
 npm run dev
-
 ```
 
+and for the queue to work
+
+```bash
+vendor/bin/sail artisan horizon
+```
+
+To access the app please use the following users:
+
+System Admin - admin@fundraizer.gr - password1234
+CSR Admin - csr_admin@fundraizer.gr - password1234
+Employee - employee@fundraizer.gr - password1234
