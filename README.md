@@ -1,59 +1,178 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Fundraiser
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Fundraiser is a Laravel 12 (PHP 8.2+) application implementing a layered, Domain‑Driven Design (DDD) architecture for
+managing fundraising Campaigns and Donations. It includes a Vue 3 + Vite SPA frontend and a clean separation between
+domain logic (Core) and infrastructure (Adapters).
 
-## About Laravel
+This README documents the key architecture decisions, assumptions, how to run the project, how to test it, and how to
+contribute within the established boundaries.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Architecture Decisions (High‑level)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Layering and dependency direction
+    - Core contains only domain logic (Aggregates/Entities, Value Objects, Domain Services, Application Services,
+      Repository Interfaces, Domain Exceptions).
+    - Adapters implement infrastructure and delivery (HTTP controllers, Eloquent models and migrations, queues/jobs,
+      notifications/mail, payment gateways, logging, etc.).
+    - Dependency direction is strictly Adapters → Core. Core never depends on Adapters or framework specifics.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Read/write segregation
+    - Core may perform read‑only queries using Eloquent’s read APIs only: `Model::query()`, `get()`, `find()`,
+      `paginate()`.
+    - All writes must go exclusively through `core/services/crud/ModelCrudService.php` (or the per‑aggregate Crud
+      service in Core calling it). No `save/create/update/delete` from within domain services.
+    - Read operations must never trigger writes.
 
-## Learning Laravel
+- Update operations contract
+    - Update methods never accept raw arrays or IDs. They accept the target Model instance and an Update Form DTO (
+      Spatie Laravel Data). Partial updates are handled by optional fields present in Update DTOs.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- Payment anti‑corruption layer
+    - The domain talks to payments via `PaymentGatewayInterface` (Core).
+    - Concrete gateways live in Adapters. A `PaymentGatewayFactory` (Adapters) resolves the configured gateway. No
+      external SDK response leaks into Core.
+    - Core receives a value object `PaymentResult` only.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- Eager loading policy (read side)
+    - To avoid client‑controlled eager loads, Core read services accept an internal `$with` array propagated into the
+      base query. Adapters (controllers/services) decide which relations to eager‑load per use case.
 
-## Laravel Sponsors
+- Aggregations for presentation
+    - Adapters may add read‑only presentation attributes on Eloquent models (e.g., `Campaign::raised_amount`,
+      `donors_count`) derived from read queries. These do not perform writes and exist only to shape API responses for
+      the SPA.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Modules (Contexts)
 
-### Premium Partners
+The code under `src/Modules` follows the same pattern per context, plus a shared `core/services/crud` write layer:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+- Identity
+    - Core: authentication/authorization services and DTOs.
+    - Adapters: `User` model, policies, middleware, controllers.
 
-## Contributing
+- Campaign
+    - Core: `CampaignService`, DTOs for create/update/query, enums for status, read‑only queries.
+    - Adapters: Eloquent models (`Campaign`, `CampaignCategory`), migrations, HTTP controllers, resources.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- Donations
+    - Core: `DonationService`, Create/Payment DTOs, `PaymentGatewayInterface`, `PaymentResult` VO. Reads campaign status
+      and orchestrates payment call; writes donation via Crud service.
+    - Adapters: `Donation` model, HTTP controller, payment provider adapters, payment gateway factory, email/queue
+      infrastructure.
 
-## Code of Conduct
+- Admin
+    - Core: admin orchestration (moderation/settings as needed).
+    - Adapters: admin controllers, routes and middleware.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- Common
+    - Core: shared DTOs, small helpers, constants/enums.
+    - Adapters: optional framework‑bound helpers (e.g., JSON response helper).
 
-## Security Vulnerabilities
+## Notable Implementations
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- Payment gateway factory
+    - `src/Donations/Adapters/Payments/PaymentGatewayFactory.php` resolves an implementation of
+      `PaymentGatewayInterface` based on `PAYMENT_GATEWAY` env (defaults to `fake`). `AppServiceProvider` binds the
+      interface to the factory result.
 
-## License
+- Donations email confirmations
+    - After a successful donation, a queued job sends a confirmation email:
+        - Job: `app/Jobs/Donations/SendDonationReceipt.php` (ShouldQueue)
+        - Notification: `app/Notifications/Donations/DonationReceiptNotification.php` (ShouldQueue)
+        - Mailable: `app/Mail/Donations/DonationReceiptMail.php` using `Envelope` and Blade view at
+          `resources/views/mail/donations/receipt.blade.php`.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- Read‑side totals for listings
+    - `Campaign` model (Adapters) exposes `raised_amount` and `donors_count` based on paid donations. These are
+      read‑only computed attributes for UI.
+
+- Active campaigns listing and caching
+    - Public `/v1/campaigns/active` endpoint returns only active campaigns. The controller applies simple cache
+      versioning to accelerate public listings.
+
+- Eager loading via `$with`
+    - Core services `CampaignService` and `UserService` accept `$with` and pass it into their `baseQuery()` methods to
+      support controller‑decided eager loading while keeping DTOs free of client‑controlled load hints.
+
+## Assumptions
+
+- Currency
+    - Default currency is USD for donations. Monetary writes store integer cents; UI converts to major units.
+
+- Donor count semantics
+    - `donors_count` currently reflects count of paid donations (not unique donors). This can be switched to distinct
+      users if required.
+
+- Authorization
+    - Gate/Policies protect reads and writes. For example, donations require that a campaign is viewable and active.
+
+## Project Layout
+
+```
+src/
+  Campaign/
+    Core/            # Domain services, DTOs, enums (read‑only queries)
+    Adapters/        # Controllers, Eloquent models, migrations
+  Donations/
+    Core/            # DonationService, payment interfaces/DTOs
+    Adapters/        # Models, controllers, payment adapters, jobs/mail
+  Identity/
+    Core/
+    Adapters/
+  Common/
+    Core/
+    Adapters/
+core/
+  services/
+    crud/
+      ModelCrudService.php  # Single write gateway used by per‑aggregate Crud services
+resources/
+  js/              # Vue 3 SPA (Vite)
+```
+
+## Running the project
+
+Prerequisites:
+
+- PHP ^8.2 (8.4 supported), Composer v2.x
+- Node.js + npm (for the SPA assets)
+
+First‑time setup (recommended):
+
+```bash
+docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v $(pwd):/opt \
+    -w /opt \
+    laravelsail/php83-composer:latest \
+    composer install --ignore-platform-reqs
+```
+
+```bash
+vendor/bin/sail up -d
+```
+
+```bash
+vendor/bin/sail composer setup
+```
+
+During the composer setup, you will be promted to create a passport client. Make sure to copy the client and add it to
+resources/js/services/auth.ts
+
+finally
+
+```bash
+npm run dev
+```
+
+and for the queue to work
+
+```bash
+vendor/bin/sail artisan horizon
+```
+
+To access the app please use the following users:
+
+System Admin - admin@fundraizer.gr - password1234
+CSR Admin - csr_admin@fundraizer.gr - password1234
+Employee - employee@fundraizer.gr - password1234

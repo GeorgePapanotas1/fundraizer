@@ -17,19 +17,24 @@ class IdentityCampaignPermissionSeeder extends Seeder
 
         // Define campaign permissions (names only)
         $campaignPermissions = [
-            'campaign.view',       // view a specific campaign
-            'campaign.view_any',   // list/search campaigns
-            'campaign.create',     // create a campaign
-            'campaign.update_own', // edit campaigns created by the user
-            'campaign.update_any', // edit any campaign
-            'campaign.delete_own', // delete campaigns created by the user
-            'campaign.delete_any', // delete any campaign
-            'campaign.moderate',   // approve/close/moderate campaigns
-            'campaign.feature',    // mark campaigns as featured
+            'campaign.view',
+            'campaign.view_any',
+            'campaign.create',
+            'campaign.update_own',
+            'campaign.update_any',
+            'campaign.delete_own',
+            'campaign.delete_any',
+            'campaign.moderate',
+            'campaign.feature',
+        ];
+
+        // Platform-wide permissions
+        $platformPermissions = [
+            'platform.access_admin',
         ];
 
         // Create all permissions (idempotent)
-        foreach ($campaignPermissions as $perm) {
+        foreach (array_merge($campaignPermissions, $platformPermissions) as $perm) {
             Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'api']);
         }
 
@@ -47,9 +52,10 @@ class IdentityCampaignPermissionSeeder extends Seeder
             'campaign.delete_any',
             'campaign.moderate',
             'campaign.feature',
+            'platform.access_admin',
         ]);
 
-        $systemAdminPerms = $campaignPermissions; // all campaign permissions
+        $systemAdminPerms = array_merge($campaignPermissions, $platformPermissions);
 
         // Use givePermissionTo for idempotency without removing other custom assignments
         $employee->givePermissionTo($employeePerms);

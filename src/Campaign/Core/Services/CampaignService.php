@@ -9,8 +9,8 @@ use Fundraiser\Campaign\Core\Dto\Forms\UpdateCampaignForm;
 use Fundraiser\Campaign\Core\Dto\Queries\CampaignQuery;
 use Fundraiser\Campaign\Core\Services\Crud\CampaignCrudService;
 use Fundraiser\Identity\Adapters\Models\User;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 
@@ -26,11 +26,12 @@ readonly class CampaignService
     ) {}
 
     /**
+     * @param  array<string>  $with
      * @return Builder<Campaign>
      */
-    protected function baseQuery(CampaignQuery $filters): Builder
+    protected function baseQuery(CampaignQuery $filters, array $with = []): Builder
     {
-        return Campaign::query()
+        $query = Campaign::query()
             ->when($filters->status, fn (Builder $q, string $v) => $q->where('status', $v))
             ->when($filters->campaign_category_id, fn (Builder $q, string $v) => $q->where('campaign_category_id', $v))
             ->when($filters->created_by_user_id, fn (Builder $q, string $v) => $q->where('created_by_user_id', $v))
@@ -40,6 +41,12 @@ readonly class CampaignService
                         ->orWhere('short_description', 'like', "%{$search}%");
                 });
             });
+
+        if (! empty($with)) {
+            $query->with($with);
+        }
+
+        return $query;
     }
 
     public function findById(string $id): ?Campaign
@@ -55,23 +62,29 @@ readonly class CampaignService
     }
 
     /**
+     * @param  array<string>  $with
      * @return Collection<int, Campaign>
      */
-    public function list(CampaignQuery $filters): Collection
+    public function list(CampaignQuery $filters, array $with = []): Collection
     {
         Gate::authorize('viewAny', Campaign::class);
 
-        return $this->baseQuery($filters)->get();
+        $query = $this->baseQuery($filters, $with);
+
+        return $query->get();
     }
 
     /**
+     * @param  array<string>  $with
      * @return LengthAwarePaginator<int, Campaign>
      */
-    public function paginate(int $perPage, int $page, CampaignQuery $filters): LengthAwarePaginator
+    public function paginate(int $perPage, int $page, CampaignQuery $filters, array $with = []): LengthAwarePaginator
     {
         Gate::authorize('viewAny', Campaign::class);
 
-        return $this->baseQuery($filters)->paginate(perPage: $perPage, page: $page);
+        $query = $this->baseQuery($filters, $with);
+
+        return $query->paginate(perPage: $perPage, page: $page);
     }
 
     public function create(CreateCampaignForm $payload): Campaign
@@ -120,6 +133,22 @@ readonly class CampaignService
             new UpdateCampaignForm(
                 status: CampaignStatus::Active->value,
                 approved_by_user_id: (string) $approver->id
+            )
+        );
+    }
+
+    /**
+     * Reject a campaign. Requires 'campaign.moderate'. Sets status to cancelled.
+     * Note: We do not record approver on rejection in current model.
+     */
+    public function reject(Campaign $campaign, User $moderator): Campaign
+    {
+        Gate::authorize('moderate', $campaign);
+
+        return $this->campaignCrudService->update(
+            $campaign,
+            new UpdateCampaignForm(
+                status: CampaignStatus::Cancelled->value,
             )
         );
     }

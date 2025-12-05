@@ -27,7 +27,13 @@ class CampaignQuery extends Data
 
         #[Max(255)]
         public ?string $search,
+
         public PaginationQuery $pagination,
+
+        // Placed last with default to preserve BC with positional ctor calls in tests
+        #[RuleAttribute('boolean')]
+        public ?bool $mine = null,
+
     ) {}
 
 }

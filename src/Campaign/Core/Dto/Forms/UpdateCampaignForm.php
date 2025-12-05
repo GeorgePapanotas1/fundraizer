@@ -63,6 +63,9 @@ class UpdateCampaignForm extends Data
         #[After('starts_at')]
         public ?string $ends_at = null,
 
+        #[Nullable]
+        public ?string $image = null,
+
         #[Sometimes]
         #[RuleAttribute('ulid|exists:users,id')]
         public ?string $created_by_user_id = null,
