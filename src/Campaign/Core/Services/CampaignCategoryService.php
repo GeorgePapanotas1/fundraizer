@@ -7,8 +7,8 @@ use Fundraiser\Campaign\Core\Dto\Forms\CreateCampaignCategoryForm;
 use Fundraiser\Campaign\Core\Dto\Forms\UpdateCampaignCategoryForm;
 use Fundraiser\Campaign\Core\Dto\Queries\CampaignCategoryQuery;
 use Fundraiser\Campaign\Core\Services\Crud\CampaignCategoryCrudService;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 

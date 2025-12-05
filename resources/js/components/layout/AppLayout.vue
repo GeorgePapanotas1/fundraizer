@@ -13,6 +13,11 @@
             <RouterLink to="/login" class="btn-subtle">Sign in</RouterLink>
           </template>
           <template v-else>
+            <RouterLink
+              v-if="auth.hasPermission('platform.access_admin')"
+              to="/admin/campaigns"
+              class="btn-subtle"
+            >Admin</RouterLink>
             <button class="btn-subtle" @click="auth.logout()">Sign out</button>
           </template>
           <RouterLink to="/campaigns/create" class="btn-primary">Start a Campaign</RouterLink>

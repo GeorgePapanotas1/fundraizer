@@ -1,6 +1,5 @@
 <template>
     <AppLayout>
-        <!-- Cover/Hero -->
         <section class="relative overflow-hidden">
             <div v-if="campaign?.image" class="h-44 md:h-56 bg-center bg-cover"
                  :style="{ backgroundImage: `url(${campaign.image})` }"></div>
@@ -13,7 +12,6 @@
                 <div v-if="error" class="card card-section text-sm text-red-600">{{ error }}</div>
                 <div v-else-if="loading" class="text-sm text-[color:var(--fg-muted)]">Loading campaign…</div>
                 <div v-else-if="campaign" class="grid lg:grid-cols-[1fr,320px] gap-8">
-                    <!-- Main -->
                     <article class="space-y-6">
                         <div class="flex items-start justify-between gap-4">
                             <div>
@@ -28,20 +26,22 @@
                                 <UiButton variant="subtle">Share</UiButton>
                                 <UiButton variant="subtle">Follow</UiButton>
                                 <RouterLink
-                                  v-if="campaign.is_mine"
-                                  :to="`/campaigns/${campaign.slug}/edit`"
-                                  class="btn-soft"
-                                >Edit</RouterLink>
+                                    v-if="campaign.is_mine"
+                                    :to="`/campaigns/${campaign.slug}/edit`"
+                                    class="btn-soft"
+                                >Edit
+                                </RouterLink>
                             </div>
                         </div>
 
-                        <!-- Progress/Goal (no raised data yet; show goal only) -->
                         <UiCard class="card-section space-y-3">
                             <div class="flex items-center justify-between">
                                 <div class="text-sm text-[color:var(--fg-muted)]">Goal
                                     {{ formatCurrency(campaign.goal_amount) }}
                                 </div>
-                                <div class="text-sm">{{ campaign.status_text || (campaign.status || '').replaceAll('_',' ') }}</div>
+                                <div class="text-sm">
+                                    {{ campaign.status_text || (campaign.status || '').replaceAll('_', ' ') }}
+                                </div>
                             </div>
                             <ProgressBar :percent="0"/>
                             <div class="flex items-center gap-4 text-sm text-[color:var(--fg-muted)]">
@@ -49,14 +49,12 @@
                             </div>
                         </UiCard>
 
-                        <!-- Description -->
                         <UiCard class="card-section space-y-3">
                             <h3 class="h4">About this campaign</h3>
                             <p v-if="description" class="whitespace-pre-line">{{ description }}</p>
                             <p v-else class="text-[color:var(--fg-muted)]">No description available.</p>
                         </UiCard>
 
-                        <!-- Impact highlights (static placeholders for now) -->
                         <div class="grid md:grid-cols-3 gap-4">
                             <UiCard class="p-4">
                                 <div class="text-sm text-[color:var(--fg-muted)]">Category</div>
@@ -64,7 +62,9 @@
                             </UiCard>
                             <UiCard class="p-4">
                                 <div class="text-sm text-[color:var(--fg-muted)]">Status</div>
-                                <div class="mt-1 font-medium">{{ campaign.status_text || (campaign.status || '').replaceAll('_',' ') }}</div>
+                                <div class="mt-1 font-medium">
+                                    {{ campaign.status_text || (campaign.status || '').replaceAll('_', ' ') }}
+                                </div>
                             </UiCard>
                             <UiCard class="p-4">
                                 <div class="text-sm text-[color:var(--fg-muted)]">Goal</div>
@@ -72,7 +72,6 @@
                             </UiCard>
                         </div>
 
-                        <!-- Updates (static) -->
                         <UiCard class="card-section space-y-4">
                             <div class="flex items-center justify-between">
                                 <h3 class="h4">Updates</h3>
@@ -90,8 +89,7 @@
                         </UiCard>
                     </article>
 
-                    <!-- Donate Sidebar -->
-                    <DonateSidebar/>
+                    <DonateSidebar :campaign="campaign" @donated="fetchCampaign"/>
                 </div>
             </div>
         </section>
@@ -100,7 +98,7 @@
 
 <script setup lang="ts">
 import {computed, onMounted, ref} from 'vue';
-import {useRoute, RouterLink} from 'vue-router';
+import {RouterLink, useRoute} from 'vue-router';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import UiButton from '@/components/ui/UiButton.vue';
 import UiCard from '@/components/ui/UiCard.vue';

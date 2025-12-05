@@ -1,5 +1,5 @@
 import {apiClient} from '@/composables/useApiClient';
-import type {ApiResponse, Paginated, PaginationMeta, PaginationLinks} from '@/types/http';
+import type {ApiResponse, Paginated, PaginationLinks, PaginationMeta} from '@/types/http';
 import type {Campaign, CampaignQuery, CreateCampaignDto, UpdateCampaignDto} from '@/types/campaigns';
 
 
@@ -12,14 +12,11 @@ function unwrap<T>(payload: any): T {
     return payload as T;
 }
 
-// Normalize various Laravel paginator shapes to our Paginated<T> type
 function normalizePaginated<T>(payload: any): Paginated<T> {
-    // If already in desired shape (data: T[], meta: {...})
     if (payload && Array.isArray(payload.data) && payload.meta) {
         return payload as Paginated<T>;
     }
 
-    // If payload is a Laravel LengthAwarePaginator JSON (current_page, data[], per_page, total, etc.)
     if (payload && typeof payload === 'object' && Array.isArray(payload.data) && 'current_page' in payload) {
         const meta: PaginationMeta = {
             current_page: Number(payload.current_page) || 1,
@@ -31,7 +28,6 @@ function normalizePaginated<T>(payload: any): Paginated<T> {
             total: Number(payload.total) || (payload.meta?.total ?? payload.data.length),
         };
 
-        // Prefer next/prev URLs when available
         const links: PaginationLinks = {
             first: payload.first_page_url ?? null,
             last: payload.last_page_url ?? null,
@@ -46,7 +42,6 @@ function normalizePaginated<T>(payload: any): Paginated<T> {
         };
     }
 
-    // Fallback: treat entire payload as data[] with a single-page meta
     const dataArr = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
     const meta: PaginationMeta = {
         current_page: 1,
@@ -57,15 +52,14 @@ function normalizePaginated<T>(payload: any): Paginated<T> {
         to: dataArr.length,
         total: dataArr.length,
     };
-    return { data: dataArr as T[], meta };
+    return {data: dataArr as T[], meta};
 }
 
 export const CampaignsService = {
     async list(params: CampaignQuery = {}): Promise<Paginated<Campaign>> {
-        // Ensure boolean flags are sent as 0/1 for backend expectations
         const serialized = {
             ...params,
-            ...(typeof params.mine === 'boolean' ? { mine: params.mine ? 1 : 0 } : {}),
+            ...(typeof params.mine === 'boolean' ? {mine: params.mine ? 1 : 0} : {}),
         } as any;
         const res = await get<any>('/v1/campaigns', {params: serialized});
         const unwrapped = unwrap<any>(res);
@@ -95,7 +89,7 @@ export const CampaignsService = {
     async listActive(params: CampaignQuery = {}): Promise<Paginated<Campaign>> {
         const serialized = {
             ...params,
-            ...(typeof params.mine === 'boolean' ? { mine: params.mine ? 1 : 0 } : {}),
+            ...(typeof params.mine === 'boolean' ? {mine: params.mine ? 1 : 0} : {}),
         } as any;
         const res = await get<any>('/v1/campaigns/active', {params: serialized});
         const unwrapped = unwrap<any>(res);
@@ -113,6 +107,16 @@ export const CampaignsService = {
             statuses: string[]
         }>>(`/v1/campaigns/${id}/statuses`);
         return unwrap(res);
+    },
+
+    async approve(id: number | string): Promise<Campaign> {
+        const res = await post<Campaign | ApiResponse<Campaign>>(`/v1/campaigns/${id}/approve`, {});
+        return unwrap<Campaign>(res);
+    },
+
+    async reject(id: number | string): Promise<Campaign> {
+        const res = await post<Campaign | ApiResponse<Campaign>>(`/v1/campaigns/${id}/reject`, {});
+        return unwrap<Campaign>(res);
     },
 };
 

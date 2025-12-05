@@ -9,6 +9,7 @@ use Fundraiser\Campaign\Core\Dto\Forms\UpdateCampaignForm;
 use Fundraiser\Campaign\Core\Dto\Queries\CampaignQuery;
 use Fundraiser\Campaign\Core\Services\CampaignService;
 use Fundraiser\Common\Adapters\Helpers\HttpResponseHelper as Response;
+use Fundraiser\Identity\Adapters\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -19,14 +20,8 @@ readonly class CampaignController
 
     public function index(CampaignQuery $query): JsonResponse
     {
-        // Adapter-side convenience: allow filtering "my campaigns" via ?mine=1
-        // without leaking adapter concerns into Core DTOs. We simply map it to
-        // created_by_user_id when requested and the user is authenticated.
-        if (request()->boolean('mine')) {
-            $userId = Auth::id();
-            if ($userId) {
-                $query->created_by_user_id = $userId;
-            }
+        if ($query->mine) {
+            $query->created_by_user_id = (string) Auth::id();
         }
 
         $paginator = $this->service->paginate(
@@ -35,21 +30,20 @@ readonly class CampaignController
             $query
         );
 
-        $paginator->getCollection()->load('category');
-
         return Response::success($paginator);
     }
 
     public function show(Campaign $campaign): JsonResponse
     {
-        $campaign->load('category');
+        // Eager-load relations needed for presentation-only computed fields
+        $campaign->load(['category', 'creator']);
 
         return Response::success($campaign);
     }
 
     public function store(CreateCampaignForm $campaignForm): JsonResponse
     {
-        $campaignForm->created_by_user_id = Auth::id();
+        $campaignForm->created_by_user_id = (string) Auth::id();
         $campaign = $this->service->create($campaignForm);
 
         return Response::success($campaign, status: 201, message: 'Created');
@@ -60,6 +54,24 @@ readonly class CampaignController
         $campaign = $this->service->update($campaign, $campaignForm);
 
         return Response::success($campaign, message: 'Updated');
+    }
+
+    public function approve(Campaign $campaign): JsonResponse
+    {
+        $user = Auth::user();
+        /** @var User $user */
+        $campaign = $this->service->approve($campaign, $user);
+
+        return Response::success($campaign, message: 'Approved');
+    }
+
+    public function reject(Campaign $campaign): JsonResponse
+    {
+        $user = Auth::user();
+        /** @var User $user */
+        $campaign = $this->service->reject($campaign, $user);
+
+        return Response::success($campaign, message: 'Rejected');
     }
 
     public function active(CampaignQuery $query): JsonResponse
@@ -73,13 +85,19 @@ readonly class CampaignController
         $perPage = $query->pagination->perPage;
         $page = $query->pagination->page;
 
-        $key = "campaigns:active:v$version:per_$perPage:page_$page";
-        $payload = Cache::remember($key, now()->addMinutes(10), function () use ($query) {
-            $p = $this->service->paginate($query->pagination->perPage, $query->pagination->page, $query);
-            // Eager-load category on the page items to avoid N+1 when serializing
-            $p->getCollection()->load('category');
+        // Apply server-side mapping for "mine" to ensure client cannot tamper with user id
+        if ($query->mine) {
+            $query->created_by_user_id = (string) Auth::id();
+        }
 
-            return $p;
+        // Build a cache key that takes into account filters to avoid serving stale/mismatched cached pages
+        $searchHash = md5((string) ($query->search ?? ''));
+        $category = (string) ($query->campaign_category_id ?? '');
+        $creator = (string) ($query->created_by_user_id ?? '');
+        $key = "campaigns:active:v{$version}:s_{$searchHash}:cat_{$category}:uid_{$creator}:per_{$perPage}:page_{$page}";
+
+        $payload = Cache::remember($key, now()->addMinutes(10), function () use ($query) {
+            return $this->service->paginate($query->pagination->perPage, $query->pagination->page, $query);
         });
 
         return Response::success($payload);

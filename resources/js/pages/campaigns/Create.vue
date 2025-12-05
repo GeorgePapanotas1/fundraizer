@@ -1,11 +1,3 @@
-<!--
-Page: Campaign Create (Vue SFC)
-Layout: AppLayout
-Composition:
-- Left: CampaignForm (mode=create)
-- Right: Guidelines sidebar card
--->
-
 <template>
     <AppLayout>
         <section class="section-padding">
@@ -86,7 +78,6 @@ async function loadStatuses() {
         const res = await CampaignsService.statuses();
         statusOptions.value = (res.statuses || []).map((s: string) => ({value: s, label: labelizeStatus(s)}));
     } catch (e: any) {
-        // Fallback already handled by form defaults
     }
 }
 
@@ -105,11 +96,9 @@ async function handleSubmit(values: CampaignFormValues) {
             status: values.status || undefined,
             starts_at: values.startDate || null,
             ends_at: values.endDate || null,
-            // optional presentation-only fields omitted server-side
         } as const;
 
         const created: Campaign = await CampaignsService.create(payload);
-        // Redirect to show page by slug
         await router.push(`/campaigns/${created.slug}`);
     } catch (e: any) {
         error.value = e?.response?.data?.message || 'Unable to create campaign';

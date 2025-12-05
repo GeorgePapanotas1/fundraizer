@@ -1,8 +1,10 @@
 import {defineStore} from 'pinia';
 import {computed, ref} from 'vue';
 import {AuthService} from '@/services/auth';
+import {IdentityService} from '@/services/identity';
 import {apiClient} from '@/composables/useApiClient';
 import type {OAuthTokenResponse} from '@/types/auth';
+import type {MeResponse} from '@/types/identity';
 
 type StoredTokens = {
     access_token: string;
@@ -18,6 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
     const expiresAt = ref<number | null>(null);
     const loading = ref(false);
     const error = ref<string | null>(null);
+    const me = ref<MeResponse | null>(null);
     let refreshTimer: number | null = null;
 
     const isAuthenticated = computed(() => !!accessToken.value && !!expiresAt.value && Date.now() < (expiresAt.value || 0));
@@ -45,6 +48,7 @@ export const useAuthStore = defineStore('auth', () => {
         accessToken.value = null;
         refreshToken.value = null;
         expiresAt.value = null;
+        me.value = null;
         apiClient.setAuthToken(null);
         if (refreshTimer) {
             window.clearTimeout(refreshTimer);
@@ -60,7 +64,6 @@ export const useAuthStore = defineStore('auth', () => {
             window.clearTimeout(refreshTimer);
             refreshTimer = null;
         }
-        // refresh 30 seconds before expiry
         const msUntilRefresh = Math.max(1000, expiresAt.value - Date.now() - 30_000);
         refreshTimer = window.setTimeout(() => {
             void refresh().catch(() => {
@@ -77,12 +80,24 @@ export const useAuthStore = defineStore('auth', () => {
         scheduleRefresh();
     }
 
+    async function fetchMe() {
+        if (!accessToken.value) return null;
+        try {
+            const resp = await IdentityService.me();
+            me.value = resp;
+            return resp;
+        } catch (e) {
+            return null;
+        }
+    }
+
     async function login(username: string, password: string) {
         loading.value = true;
         error.value = null;
         try {
             const res = await AuthService.loginWithPassword({username, password});
             handleTokenResponse(res);
+            await fetchMe();
             return true;
         } catch (e: any) {
             error.value = e?.response?.data?.message || 'Unable to sign in';
@@ -111,13 +126,23 @@ export const useAuthStore = defineStore('auth', () => {
 
     restore();
 
+    if (accessToken.value) {
+        void fetchMe();
+    }
+
     return {
-        // state
         accessToken, refreshToken, expiresAt, loading, error,
-        // getters
         isAuthenticated,
-        // actions
-        login, refresh, logout, restore,
+        me,
+        roles: computed(() => me.value?.roles ?? []),
+        permissions: computed(() => me.value?.permissions ?? []),
+        hasRole: (role: string) => (me.value?.roles ?? []).includes(role),
+        hasPermission: (perm: string) => (me.value?.permissions ?? []).includes(perm),
+        restore,
+        login,
+        refresh,
+        logout,
+        fetchMe,
     };
 });
 

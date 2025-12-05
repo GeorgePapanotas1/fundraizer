@@ -64,6 +64,7 @@
                             :title="c.title"
                             :excerpt="c.short_description || ''"
                             :goal="formatCurrency(c.goal_amount)"
+                            :raised="formatCurrency(c.raised_amount ?? null)"
                             :to="`/campaigns/${c.slug}`"
                             :image="c.image || null"
                             :cover="coverVariant(idx)"
@@ -159,7 +160,7 @@ async function fetchCampaigns() {
     loading.value = true;
     error.value = null;
     try {
-        const {data, meta: m} = await CampaignsService.list({
+        const {data, meta: m} = await CampaignsService.listActive({
             search: filters.search,
             campaign_category_id: filters.campaign_category_id,
             mine: filters.mine,

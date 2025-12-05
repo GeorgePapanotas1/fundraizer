@@ -5,21 +5,24 @@ export interface Campaign {
     title: string;
     slug: string;
     short_description: string | null;
-    long_description: string | null; // legacy naming in types; backend may return `description`
-    description?: string | null; // align with backend model field
+    long_description: string | null;
+    description?: string | null;
     category_id: number | null;
     category_name?: string;
-    created_by_user_id?: string | null; // ULID on backend
+    created_by_user_id?: string | null;
+    organizer_name?: string | null;
     goal_amount: number | null;
-    cover_image_url: string | null; // legacy naming in types
-    image?: string | null; // backend model field
-    status: CampaignStatus; // machine enum value from backend
-    status_text?: string; // human-friendly label (backend-provided)
-    start_date: string | null; // legacy naming in types
-    end_date: string | null; // legacy naming in types
-    starts_at?: string | null; // backend model field
-    ends_at?: string | null; // backend model field
-    is_mine?: boolean; // backend accessor indicating ownership
+    raised_amount?: number; // computed presentation field from backend
+    donors_count?: number;  // computed presentation field from backend
+    cover_image_url: string | null;
+    image?: string | null;
+    status: CampaignStatus;
+    status_text?: string;
+    start_date: string | null;
+    end_date: string | null;
+    starts_at?: string | null;
+    ends_at?: string | null;
+    is_mine?: boolean;
     featured: boolean;
     matching: boolean;
     location: string | null;

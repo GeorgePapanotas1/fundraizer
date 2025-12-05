@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Fundraiser\Campaign\Adapters\Models\Campaign;
 use Fundraiser\Campaign\Adapters\Models\CampaignCategory;
 use Illuminate\Database\Seeder;
+use Str;
 
 class CampaignDemoSeeder extends Seeder
 {
@@ -34,7 +35,8 @@ class CampaignDemoSeeder extends Seeder
             $categoryModels[] = CampaignCategory::query()->firstOrCreate(
                 ['name' => $name],
                 [
-                    'description' => $name . ' initiatives and campaigns',
+                    'description' => $name.' initiatives and campaigns',
+                    'slug' => Str::slug($name),
                     'is_active' => true,
                 ]
             );

@@ -1,9 +1,3 @@
-<!--
-Page: Login (Vue SFC)
-Goal: Replicate the static Blade login page visuals using the Tailwind v4 theme and UI components.
-Notes: Presentation only; real auth wiring will use Identity module and adapters.
--->
-
 <template>
     <AppLayout>
         <section class="min-h-[calc(100vh-8rem)] section-padding">

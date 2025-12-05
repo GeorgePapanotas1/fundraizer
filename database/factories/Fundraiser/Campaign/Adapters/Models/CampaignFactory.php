@@ -7,6 +7,7 @@ use Fundraiser\Campaign\Adapters\Models\CampaignCategory;
 use Fundraiser\Campaign\Core\Constants\Enums\CampaignStatus;
 use Fundraiser\Identity\Adapters\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Str;
 
 /**
  * @extends Factory<Campaign>
@@ -26,6 +27,7 @@ class CampaignFactory extends Factory
 
         return [
             'title' => $title,
+            'slug' => Str::slug($title),
             'short_description' => $this->faker->sentence(),
             'description' => $this->faker->paragraphs(2, true),
             'image' => sprintf('https://picsum.photos/seed/%s/800/450', $this->faker->uuid()),
